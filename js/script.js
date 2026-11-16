@@ -4,11 +4,14 @@ const BOARD_SIZE = 4;
 
 let board = [];
 let score = 0;
+let isGameOver = false;
 
 
 const gameBoard = document.getElementById('game-board');
 const scoreElement = document.getElementById('score');
 const bestScoreElement = document.getElementById('best-score');
+const gameOverElement = document.getElementById('game-over');
+const finalScoreElement = document.getElementById('final-score');
 
 function createBoard() {
     gameBoard.innerHTML = '';
@@ -180,9 +183,52 @@ function moveVertical(direction) {
     return moved;
 }
 
+// Check available moves
+
+function canMove() {
+    for (let row = 0; row < BOARD_SIZE; row++) {
+        for (let col = 0; col < BOARD_SIZE; col++) {
+            const currentTile = board[row][col];
+
+            if (currentTile === 0) {
+                return true;
+            }
+
+            if (
+                col < BOARD_SIZE - 1 &&
+                currentTile === board[row][col + 1]
+            ) {
+                return true;
+            }
+
+            if (
+                row < BOARD_SIZE - 1 &&
+                currentTile === board[row + 1][col]
+            ) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+// Game over
+
+function endGame() {
+    isGameOver = true;
+
+    finalScoreElement.textContent = score;
+    gameOverElement.hidden = false;
+}
+
 // Move tiles
 
 function moveTiles(direction) {
+    if (isGameOver) {
+        return false;
+    }
+
     let moved = false;
 
     if (direction === 'left' || direction === 'right') {
@@ -202,6 +248,10 @@ function moveTiles(direction) {
 
         updateScore();
         renderBoard();
+
+        if (!canMove()) {
+            endGame();
+        }
     }
 
     return moved;
@@ -211,6 +261,9 @@ function moveTiles(direction) {
 
 function startGame() {
     score = 0;
+    isGameOver = false;
+
+    gameOverElement.hidden = true;
 
     createBoard();
 

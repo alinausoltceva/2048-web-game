@@ -1,4 +1,3 @@
-
 // Game settings
 
 const BOARD_SIZE = 4;
@@ -87,6 +86,114 @@ function spawnTile() {
 
 function updateScore() {
     scoreElement.textContent = score;
+}
+
+// Merge tiles in one line
+
+function mergeLine(line) {
+    const tiles = line.filter(value => value !== 0);
+    const mergedLine = [];
+
+    for (let i = 0; i < tiles.length; i++) {
+        if (tiles[i] === tiles[i + 1]) {
+            mergedLine.push(tiles[i] * 2);
+            i++;
+        } else {
+            mergedLine.push(tiles[i]);
+        }
+    }
+
+    while (mergedLine.length < BOARD_SIZE) {
+        mergedLine.push(0);
+    }
+
+    return mergedLine;
+}
+
+// Move tiles horizontally
+
+function moveHorizontal(direction) {
+    let moved = false;
+
+    for (let row = 0; row < BOARD_SIZE; row++) {
+        const originalLine = [...board[row]];
+
+        let line = [...originalLine];
+
+        if (direction === 'right') {
+            line.reverse();
+        }
+
+        line = mergeLine(line);
+
+        if (direction === 'right') {
+            line.reverse();
+        }
+
+        if (line.some((value, index) => value !== originalLine[index])) {
+            moved = true;
+        }
+
+        board[row] = line;
+    }
+
+    return moved;
+}
+
+// Move tiles vertically
+
+function moveVertical(direction) {
+    let moved = false;
+
+    for (let col = 0; col < BOARD_SIZE; col++) {
+        const originalLine = [];
+
+        for (let row = 0; row < BOARD_SIZE; row++) {
+            originalLine.push(board[row][col]);
+        }
+
+        let line = [...originalLine];
+
+        if (direction === 'down') {
+            line.reverse();
+        }
+
+        line = mergeLine(line);
+
+        if (direction === 'down') {
+            line.reverse();
+        }
+
+        if (line.some((value, index) => value !== originalLine[index])) {
+            moved = true;
+        }
+
+        for (let row = 0; row < BOARD_SIZE; row++) {
+            board[row][col] = line[row];
+        }
+    }
+
+    return moved;
+}
+
+// Move tiles
+
+function moveTiles(direction) {
+    let moved = false;
+
+    if (direction === 'left' || direction === 'right') {
+        moved = moveHorizontal(direction);
+    } else if (direction === 'up' || direction === 'down') {
+        moved = moveVertical(direction);
+    } else {
+        return false;
+    }
+
+    if (moved) {
+        renderBoard();
+    }
+
+    return moved;
 }
 
 // Start new game

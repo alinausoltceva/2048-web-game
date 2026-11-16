@@ -316,3 +316,218 @@ button {
 .game-over-content > .control-button {
     width: 100%;
 }
+
+/* Responsive design: tablets and mobile */
+
+@media (max-width: 768px) {
+    body {
+        padding: 32px 18px;
+    }
+
+    .game {
+        max-width: 460px;
+    }
+
+    .game-title {
+        font-size: 64px;
+    }
+
+    .game-board {
+        gap: 10px;
+        padding: 10px;
+    }
+
+    .tile {
+        font-size: clamp(24px, 5vw, 34px);
+    }
+
+    .tile-128,
+    .tile-256,
+    .tile-512 {
+        font-size: 26px;
+    }
+
+    .tile-1024,
+    .tile-2048 {
+        font-size: 21px;
+    }
+
+    /* Mobile game controls */
+
+    .mobile-controls {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        margin-top: 18px;
+    }
+
+    .horizontal-controls {
+        display: flex;
+        gap: 8px;
+    }
+
+    .direction-button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 58px;
+        height: 58px;
+        border: none;
+        border-radius: 7px;
+        background-color: #8f7a66;
+        color: #ffffff;
+        font-size: 26px;
+        font-weight: 700;
+    }
+
+        .direction-button:hover {
+            background-color: #776452;
+        }
+
+        .direction-button:active {
+            background-color: #665544;
+        }
+}
+
+/* ===== Small mobile screens ===== */
+
+@media (max-width: 480px) {
+    body {
+        padding: 24px 14px;
+    }
+
+    .game-header {
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+
+    .game-title {
+        font-size: 56px;
+    }
+
+    .game-info {
+        gap: 6px;
+    }
+
+    .score-container,
+    .best-container {
+        min-width: 72px;
+        padding: 8px 10px;
+    }
+
+    .score-label {
+        font-size: 11px;
+    }
+
+    .score-value {
+        font-size: 19px;
+    }
+
+    .game-controls {
+        gap: 8px;
+        margin-bottom: 16px;
+    }
+
+    .control-button {
+        flex: 1 1 calc(50% - 4px);
+        padding: 11px 8px;
+        font-size: 13px;
+    }
+
+    .game-board {
+        gap: 7px;
+        padding: 7px;
+    }
+
+    .tile {
+        font-size: clamp(22px, 7vw, 30px);
+    }
+
+    .tile-128,
+    .tile-256,
+    .tile-512 {
+        font-size: 22px;
+    }
+
+    .tile-1024,
+    .tile-2048 {
+        font-size: 18px;
+    }
+
+    .direction-button {
+        width: 54px;
+        height: 54px;
+        font-size: 24px;
+    }
+
+    .leaderboard {
+        padding: 14px;
+        overflow-x: auto;
+    }
+
+    .leaderboard-header h2 {
+        font-size: 19px;
+    }
+
+    .leaderboard-table th,
+    .leaderboard-table td {
+        padding: 8px 4px;
+        font-size: 12px;
+    }
+
+    .game-over-content {
+        padding: 24px 18px;
+    }
+
+        .game-over-content h2 {
+            font-size: 24px;
+        }
+}
+
+/* ===== Very small mobile screens ===== */
+
+@media (max-width: 360px) {
+    body {
+        padding: 18px 10px;
+    }
+
+    .game-title {
+        font-size: 48px;
+    }
+
+    .score-container,
+    .best-container {
+        min-width: 65px;
+        padding: 7px 8px;
+    }
+
+    .score-value {
+        font-size: 17px;
+    }
+
+    .game-board {
+        gap: 6px;
+        padding: 6px;
+    }
+
+    .tile {
+        font-size: 22px;
+    }
+
+    .tile-128,
+    .tile-256,
+    .tile-512 {
+        font-size: 19px;
+    }
+
+    .tile-1024,
+    .tile-2048 {
+        font-size: 16px;
+    }
+
+    .direction-button {
+        width: 50px;
+        height: 50px;
+    }
+}

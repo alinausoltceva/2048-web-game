@@ -96,7 +96,11 @@ function mergeLine(line) {
 
     for (let i = 0; i < tiles.length; i++) {
         if (tiles[i] === tiles[i + 1]) {
-            mergedLine.push(tiles[i] * 2);
+            const mergedValue = tiles[i] * 2;
+
+            mergedLine.push(mergedValue);
+            score += mergedValue;
+
             i++;
         } else {
             mergedLine.push(tiles[i]);
@@ -190,6 +194,13 @@ function moveTiles(direction) {
     }
 
     if (moved) {
+        const newTilesCount = Math.floor(Math.random() * 2) + 1;
+
+        for (let i = 0; i < newTilesCount; i++) {
+            spawnTile();
+        }
+
+        updateScore();
         renderBoard();
     }
 

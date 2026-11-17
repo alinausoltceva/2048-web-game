@@ -5,6 +5,7 @@ const BOARD_SIZE = 4;
 let board = [];
 let score = 0;
 let isGameOver = false;
+let undoState = null;
 
 
 const gameBoard = document.getElementById('game-board');
@@ -13,6 +14,7 @@ const bestScoreElement = document.getElementById('best-score');
 const gameOverElement = document.getElementById('game-over');
 const finalScoreElement = document.getElementById('final-score');
 const mobileControls = document.getElementById('mobile-controls');
+const undoButton = document.getElementById('undo-button');
 
 function createBoard() {
     gameBoard.innerHTML = '';
@@ -90,6 +92,12 @@ function spawnTile() {
 
 function updateScore() {
     scoreElement.textContent = score;
+}
+
+// Update undo button
+
+function updateUndoButton() {
+    undoButton.disabled = !undoState || isGameOver;
 }
 
 // Merge tiles in one line
@@ -218,10 +226,13 @@ function canMove() {
 
 function endGame() {
     isGameOver = true;
+    undoState = null;
 
     finalScoreElement.textContent = score;
     gameOverElement.hidden = false;
     mobileControls.hidden = true;
+
+    updateUndoButton();
 }
 
 // Move tiles
@@ -230,6 +241,11 @@ function moveTiles(direction) {
     if (isGameOver) {
         return false;
     }
+
+    const previousState = {
+        board: board.map(row => [...row]),
+        score: score
+    };
 
     let moved = false;
 
@@ -242,6 +258,8 @@ function moveTiles(direction) {
     }
 
     if (moved) {
+        undoState = previousState;
+
         const newTilesCount = Math.floor(Math.random() * 2) + 1;
 
         for (let i = 0; i < newTilesCount; i++) {
@@ -253,10 +271,29 @@ function moveTiles(direction) {
 
         if (!canMove()) {
             endGame();
+        } else {
+            updateUndoButton();
         }
     }
 
     return moved;
+}
+
+// Undo last move
+
+function undoMove() {
+    if (isGameOver || !undoState) {
+        return;
+    }
+
+    board = undoState.board.map(row => [...row]);
+    score = undoState.score;
+
+    undoState = null;
+
+    updateScore();
+    renderBoard();
+    updateUndoButton();
 }
 
 // Keyboard controls
@@ -298,11 +335,16 @@ mobileControls.addEventListener('click', (event) => {
     moveTiles(direction);
 });
 
+// Undo button
+
+undoButton.addEventListener('click', undoMove);
+
 // Start new game
 
 function startGame() {
     score = 0;
     isGameOver = false;
+    undoState = null;
 
     gameOverElement.hidden = true;
     mobileControls.hidden = false;
@@ -317,6 +359,7 @@ function startGame() {
 
     updateScore();
     renderBoard();
+    updateUndoButton();
 }
 
 startGame();

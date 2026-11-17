@@ -15,6 +15,8 @@ const gameOverElement = document.getElementById('game-over');
 const finalScoreElement = document.getElementById('final-score');
 const mobileControls = document.getElementById('mobile-controls');
 const undoButton = document.getElementById('undo-button');
+const newGameButton = document.getElementById('new-game-button');
+const restartButton = document.getElementById('restart-button');
 
 function createBoard() {
     gameBoard.innerHTML = '';
@@ -338,6 +340,11 @@ mobileControls.addEventListener('click', (event) => {
 // Undo button
 
 undoButton.addEventListener('click', undoMove);
+
+// Restart game controls
+
+newGameButton.addEventListener('click', startGame);
+restartButton.addEventListener('click', startGame);
 
 // Start new game
 

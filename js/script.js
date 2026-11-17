@@ -12,6 +12,7 @@ const scoreElement = document.getElementById('score');
 const bestScoreElement = document.getElementById('best-score');
 const gameOverElement = document.getElementById('game-over');
 const finalScoreElement = document.getElementById('final-score');
+const mobileControls = document.getElementById('mobile-controls');
 
 function createBoard() {
     gameBoard.innerHTML = '';
@@ -220,6 +221,7 @@ function endGame() {
 
     finalScoreElement.textContent = score;
     gameOverElement.hidden = false;
+    mobileControls.hidden = true;
 }
 
 // Move tiles
@@ -257,6 +259,45 @@ function moveTiles(direction) {
     return moved;
 }
 
+// Keyboard controls
+
+document.addEventListener('keydown', (event) => {
+    const directions = {
+        ArrowLeft: 'left',
+        ArrowRight: 'right',
+        ArrowUp: 'up',
+        ArrowDown: 'down'
+    };
+
+    const direction = directions[event.key];
+
+    if (!direction || isGameOver) {
+        return;
+    }
+
+    if (event.target.matches('input, textarea')) {
+        return;
+    }
+
+    event.preventDefault();
+
+    moveTiles(direction);
+});
+
+// Mobile controls
+
+mobileControls.addEventListener('click', (event) => {
+    const button = event.target.closest('.direction-button');
+
+    if (!button) {
+        return;
+    }
+
+    const direction = button.dataset.direction;
+
+    moveTiles(direction);
+});
+
 // Start new game
 
 function startGame() {
@@ -264,6 +305,7 @@ function startGame() {
     isGameOver = false;
 
     gameOverElement.hidden = true;
+    mobileControls.hidden = false;
 
     createBoard();
 

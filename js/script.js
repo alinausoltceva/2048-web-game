@@ -1,7 +1,7 @@
 // Game settings
 
 const BOARD_SIZE = 4;
-
+const STORAGE_KEY = '2048-game-state';
 let board = [];
 let score = 0;
 let isGameOver = false;
@@ -11,61 +11,45 @@ let undoState = null;
 const gameBoard = document.getElementById('game-board');
 const scoreElement = document.getElementById('score');
 const bestScoreElement = document.getElementById('best-score');
+
+const newGameButton = document.getElementById('new-game-button');
+const undoButton = document.getElementById('undo-button');
+const mobileControls = document.getElementById('mobile-controls');
+
 const gameOverElement = document.getElementById('game-over');
 const finalScoreElement = document.getElementById('final-score');
-const mobileControls = document.getElementById('mobile-controls');
-const undoButton = document.getElementById('undo-button');
-const newGameButton = document.getElementById('new-game-button');
-const restartButton = document.getElementById('restart-button');
+
 
 function createBoard() {
-    gameBoard.innerHTML = '';
-
     board = [];
 
     for (let row = 0; row < BOARD_SIZE; row++) {
-        const boardRow = [];
-
-        for (let col = 0; col < BOARD_SIZE; col++) {
-            const tile = document.createElement('div');
-
-            tile.classList.add('tile');
-            tile.setAttribute('role', 'gridcell');
-
-            gameBoard.appendChild(tile);
-            boardRow.push(0);
-        }
-
-        board.push(boardRow);
+        board.push([0, 0, 0, 0]);
     }
 }
 
-// Render game board
-
+// Board rendering
 function renderBoard() {
-    const tiles = gameBoard.children;
+    gameBoard.innerHTML = '';
 
     for (let row = 0; row < BOARD_SIZE; row++) {
         for (let col = 0; col < BOARD_SIZE; col++) {
-            const tile = tiles[row * BOARD_SIZE + col];
+            const tile = document.createElement('div');
             const value = board[row][col];
 
-            tile.className = 'tile';
-            tile.textContent = '';
+            tile.classList.add('tile');
 
             if (value !== 0) {
-                tile.classList.add(`tile-${value}`);
                 tile.textContent = value;
-                tile.setAttribute('aria-label', `Плитка ${value}`);
-            } else {
-                tile.setAttribute('aria-label', 'Пустая клетка');
+                tile.classList.add(`tile-${value}`);
             }
+
+            gameBoard.appendChild(tile);
         }
     }
 }
 
-// Generate random tile
-
+// Random tile spawning
 function spawnTile() {
     const emptyCells = [];
 
@@ -102,6 +86,46 @@ function updateUndoButton() {
     undoButton.disabled = !undoState || isGameOver;
 }
 
+// Game over check
+function canMove() {
+    for (let row = 0; row < BOARD_SIZE; row++) {
+        for (let col = 0; col < BOARD_SIZE; col++) {
+            if (board[row][col] === 0) {
+                return true;
+            }
+
+            if (
+                col < BOARD_SIZE - 1 &&
+                board[row][col] === board[row][col + 1]
+            ) {
+                return true;
+            }
+
+            if (
+                row < BOARD_SIZE - 1 &&
+                board[row][col] === board[row + 1][col]
+            ) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+// Game over
+function endGame() {
+    isGameOver = true;
+    undoState = null;
+
+    finalScoreElement.textContent = score;
+    gameOverElement.hidden = false;
+    mobileControls.hidden = true;
+
+    updateUndoButton();
+    saveGame();
+}
+
 // Merge tiles in one line
 
 function mergeLine(line) {
@@ -128,7 +152,7 @@ function mergeLine(line) {
     return mergedLine;
 }
 
-// Move tiles horizontally
+// Move tiles horizontally 
 
 function moveHorizontal(direction) {
     let moved = false;
@@ -136,23 +160,15 @@ function moveHorizontal(direction) {
     for (let row = 0; row < BOARD_SIZE; row++) {
         const originalLine = [...board[row]];
 
-        let line = [...originalLine];
-
-        if (direction === 'right') {
-            line.reverse();
+        if (direction === 'left') {
+            board[row] = mergeLine(board[row]);
+        } else {
+            board[row] = mergeLine([...board[row]].reverse()).reverse();
         }
 
-        line = mergeLine(line);
-
-        if (direction === 'right') {
-            line.reverse();
-        }
-
-        if (line.some((value, index) => value !== originalLine[index])) {
+        if (originalLine.join(',') !== board[row].join(',')) {
             moved = true;
         }
-
-        board[row] = line;
     }
 
     return moved;
@@ -170,78 +186,31 @@ function moveVertical(direction) {
             originalLine.push(board[row][col]);
         }
 
-        let line = [...originalLine];
+        let newLine;
 
-        if (direction === 'down') {
-            line.reverse();
-        }
-
-        line = mergeLine(line);
-
-        if (direction === 'down') {
-            line.reverse();
-        }
-
-        if (line.some((value, index) => value !== originalLine[index])) {
-            moved = true;
+        if (direction === 'up') {
+            newLine = mergeLine(originalLine);
+        } else {
+            newLine = mergeLine([...originalLine].reverse()).reverse();
         }
 
         for (let row = 0; row < BOARD_SIZE; row++) {
-            board[row][col] = line[row];
+            if (board[row][col] !== newLine[row]) {
+                moved = true;
+            }
+
+            board[row][col] = newLine[row];
         }
     }
 
     return moved;
 }
 
-// Check available moves
-
-function canMove() {
-    for (let row = 0; row < BOARD_SIZE; row++) {
-        for (let col = 0; col < BOARD_SIZE; col++) {
-            const currentTile = board[row][col];
-
-            if (currentTile === 0) {
-                return true;
-            }
-
-            if (
-                col < BOARD_SIZE - 1 &&
-                currentTile === board[row][col + 1]
-            ) {
-                return true;
-            }
-
-            if (
-                row < BOARD_SIZE - 1 &&
-                currentTile === board[row + 1][col]
-            ) {
-                return true;
-            }
-        }
-    }
-
-    return false;
-}
-
-// Game over
-
-function endGame() {
-    isGameOver = true;
-    undoState = null;
-
-    finalScoreElement.textContent = score;
-    gameOverElement.hidden = false;
-    mobileControls.hidden = true;
-
-    updateUndoButton();
-}
-
 // Move tiles
 
 function moveTiles(direction) {
     if (isGameOver) {
-        return false;
+        return;
     }
 
     const previousState = {
@@ -255,36 +224,35 @@ function moveTiles(direction) {
         moved = moveHorizontal(direction);
     } else if (direction === 'up' || direction === 'down') {
         moved = moveVertical(direction);
+    }
+
+    if (!moved) {
+        return;
+    }
+
+    undoState = previousState;
+
+    const newTilesCount = Math.floor(Math.random() * 2) + 1;
+
+    for (let i = 0; i < newTilesCount; i++) {
+        spawnTile();
+    }
+
+    updateScore();
+    renderBoard();
+
+    if (!canMove()) {
+        endGame();
     } else {
-        return false;
+        updateUndoButton();
+        saveGame();
     }
-
-    if (moved) {
-        undoState = previousState;
-
-        const newTilesCount = Math.floor(Math.random() * 2) + 1;
-
-        for (let i = 0; i < newTilesCount; i++) {
-            spawnTile();
-        }
-
-        updateScore();
-        renderBoard();
-
-        if (!canMove()) {
-            endGame();
-        } else {
-            updateUndoButton();
-        }
-    }
-
-    return moved;
 }
 
 // Undo last move
 
 function undoMove() {
-    if (isGameOver || !undoState) {
+    if (!undoState || isGameOver) {
         return;
     }
 
@@ -296,6 +264,117 @@ function undoMove() {
     updateScore();
     renderBoard();
     updateUndoButton();
+    saveGame();
+}
+
+// Start new game
+function startGame() {
+    score = 0;
+    isGameOver = false;
+    undoState = null;
+
+    gameOverElement.hidden = true;
+    mobileControls.hidden = false;
+
+    createBoard();
+
+    const initialTilesCount = Math.floor(Math.random() * 3) + 1;
+
+    for (let i = 0; i < initialTilesCount; i++) {
+        spawnTile();
+    }
+
+    updateScore();
+    renderBoard();
+    updateUndoButton();
+
+    saveGame();
+}
+
+// Save game to localStorage
+function saveGame() {
+    const gameState = {
+        board: board,
+        score: score,
+        isGameOver: isGameOver,
+        undoState: undoState
+    };
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(gameState));
+}
+
+// Load game from localStorage
+function loadGame() {
+    const savedGame = localStorage.getItem(STORAGE_KEY);
+
+    if (!savedGame) {
+        return false;
+    }
+
+    try {
+        const gameState = JSON.parse(savedGame);
+
+        if (
+            !Array.isArray(gameState.board) ||
+            gameState.board.length !== BOARD_SIZE ||
+            !gameState.board.every(
+                row => Array.isArray(row) &&
+                    row.length === BOARD_SIZE &&
+                    row.every(value =>
+                        Number.isInteger(value) && value >= 0
+                    )
+            ) ||
+            !Number.isFinite(gameState.score) ||
+            gameState.score < 0 ||
+            typeof gameState.isGameOver !== 'boolean'
+        ) {
+            return false;
+        }
+
+        board = gameState.board.map(row => [...row]);
+        score = gameState.score;
+        isGameOver = gameState.isGameOver;
+
+        if (
+            gameState.undoState &&
+            Array.isArray(gameState.undoState.board) &&
+            gameState.undoState.board.length === BOARD_SIZE &&
+            gameState.undoState.board.every(
+                row => Array.isArray(row) &&
+                    row.length === BOARD_SIZE &&
+                    row.every(value =>
+                        Number.isInteger(value) && value >= 0
+                    )
+            ) &&
+            Number.isFinite(gameState.undoState.score) &&
+            gameState.undoState.score >= 0
+        ) {
+            undoState = {
+                board: gameState.undoState.board.map(row => [...row]),
+                score: gameState.undoState.score
+            };
+        } else {
+            undoState = null;
+        }
+
+        updateScore();
+        renderBoard();
+
+        if (isGameOver) {
+            finalScoreElement.textContent = score;
+            gameOverElement.hidden = false;
+            mobileControls.hidden = true;
+        } else {
+            gameOverElement.hidden = true;
+            mobileControls.hidden = false;
+        }
+
+        updateUndoButton();
+
+        return true;
+    } catch (error) {
+        return false;
+    }
 }
 
 // Keyboard controls
@@ -337,36 +416,14 @@ mobileControls.addEventListener('click', (event) => {
     moveTiles(direction);
 });
 
-// Undo button
-
+// Button event listeners
 undoButton.addEventListener('click', undoMove);
-
-// Restart game controls
-
 newGameButton.addEventListener('click', startGame);
-restartButton.addEventListener('click', startGame);
 
-// Start new game
+document.getElementById('restart-button')
+    .addEventListener('click', startGame);
 
-function startGame() {
-    score = 0;
-    isGameOver = false;
-    undoState = null;
-
-    gameOverElement.hidden = true;
-    mobileControls.hidden = false;
-
-    createBoard();
-
-    const initialTilesCount = Math.floor(Math.random() * 3) + 1;
-
-    for (let i = 0; i < initialTilesCount; i++) {
-        spawnTile();
-    }
-
-    updateScore();
-    renderBoard();
-    updateUndoButton();
+// Initialize game
+if (!loadGame()) {
+    startGame();
 }
-
-startGame();

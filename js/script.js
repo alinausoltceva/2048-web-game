@@ -9,7 +9,7 @@ let board = [];
 let score = 0;
 let isGameOver = false;
 let undoState = null;
-
+let tileCells = [];
 
 const gameBoard = document.getElementById('game-board');
 const scoreElement = document.getElementById('score');
@@ -40,22 +40,99 @@ function createBoard() {
 }
 
 // Board rendering
-function renderBoard() {
-    gameBoard.innerHTML = '';
+function renderBoard(animation = null) {
+    if (tileCells.length === 0) {
+        for (let row = 0; row < BOARD_SIZE; row++) {
+            for (let col = 0; col < BOARD_SIZE; col++) {
+                const tile = document.createElement('div');
 
+                tile.classList.add('tile');
+
+                gameBoard.appendChild(tile);
+                tileCells.push(tile);
+            }
+        }
+    }
+
+    // Update existing cells
     for (let row = 0; row < BOARD_SIZE; row++) {
         for (let col = 0; col < BOARD_SIZE; col++) {
-            const tile = document.createElement('div');
+            const index = row * BOARD_SIZE + col;
+            const tile = tileCells[index];
             const value = board[row][col];
 
-            tile.classList.add('tile');
+            tile.className = 'tile';
+            tile.textContent = value === 0 ? '' : value;
 
             if (value !== 0) {
-                tile.textContent = value;
                 tile.classList.add(`tile-${value}`);
-            }
 
-            gameBoard.appendChild(tile);
+                if (animation) {
+                    const position = `${row}-${col}`;
+
+                    if (animation.newPositions.includes(position)) {
+                        tile.classList.add('tile-new');
+                    } else if (animation.mergedPositions.includes(position)) {
+                        tile.classList.add('tile-merged');
+                    }
+                }
+            }
+        }
+    }
+
+    // Animate tile movement
+    if (animation) {
+        for (let row = 0; row < BOARD_SIZE; row++) {
+            for (let col = 0; col < BOARD_SIZE; col++) {
+                const position = `${row}-${col}`;
+                const index = row * BOARD_SIZE + col;
+                const tile = tileCells[index];
+
+                if (
+                    board[row][col] === 0 ||
+                    animation.newPositions.includes(position)
+                ) {
+                    continue;
+                }
+
+                const sourcePosition = animation.moveSources[position];
+
+                if (!sourcePosition) {
+                    continue;
+                }
+
+                const [sourceRow, sourceCol] = sourcePosition
+                    .split('-')
+                    .map(Number);
+
+                const sourceIndex = sourceRow * BOARD_SIZE + sourceCol;
+                const sourceTile = tileCells[sourceIndex];
+
+                const sourceRect = sourceTile.getBoundingClientRect();
+                const targetRect = tile.getBoundingClientRect();
+
+                const deltaX = sourceRect.left - targetRect.left;
+                const deltaY = sourceRect.top - targetRect.top;
+
+                if (deltaX === 0 && deltaY === 0) {
+                    continue;
+                }
+
+                tile.animate(
+                    [
+                        {
+                            transform: `translate(${deltaX}px, ${deltaY}px)`
+                        },
+                        {
+                            transform: 'translate(0, 0)'
+                        }
+                    ],
+                    {
+                        duration: 420,
+                        easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)'
+                    }
+                );
+            }
         }
     }
 }
@@ -83,6 +160,7 @@ function spawnTile() {
     const value = Math.random() < 0.9 ? 2 : 4;
 
     board[randomCell.row][randomCell.col] = value;
+    return randomCell;
 }
 
 // Update score
@@ -230,6 +308,140 @@ function moveVertical(direction) {
     return moved;
 }
 
+
+// Find merged tile positions
+function getMergedPositions(previousBoard, direction) {
+    const mergedPositions = [];
+
+    for (let line = 0; line < BOARD_SIZE; line++) {
+        const tiles = [];
+
+        for (let position = 0; position < BOARD_SIZE; position++) {
+            let row;
+            let col;
+
+            if (direction === 'left' || direction === 'right') {
+                row = line;
+                col = direction === 'left'
+                    ? position
+                    : BOARD_SIZE - 1 - position;
+            } else {
+                row = direction === 'up'
+                    ? position
+                    : BOARD_SIZE - 1 - position;
+                col = line;
+            }
+
+            const value = previousBoard[row][col];
+
+            if (value !== 0) {
+                tiles.push({ value });
+            }
+        }
+
+        let targetPosition = 0;
+
+        for (let i = 0; i < tiles.length; i++) {
+            if (
+                tiles[i].value === tiles[i + 1]?.value
+            ) {
+                let row;
+                let col;
+
+                if (direction === 'left' || direction === 'right') {
+                    row = line;
+                    col = direction === 'left'
+                        ? targetPosition
+                        : BOARD_SIZE - 1 - targetPosition;
+                } else {
+                    row = direction === 'up'
+                        ? targetPosition
+                        : BOARD_SIZE - 1 - targetPosition;
+                    col = line;
+                }
+
+                mergedPositions.push(`${row}-${col}`);
+
+                i++;
+            }
+
+            targetPosition++;
+        }
+    }
+
+    return mergedPositions;
+}
+
+// Find source positions of moved tiles
+function getMoveSources(previousBoard, direction) {
+    const moveSources = {};
+
+    for (let line = 0; line < BOARD_SIZE; line++) {
+        const tiles = [];
+
+        for (let position = 0; position < BOARD_SIZE; position++) {
+            let row;
+            let col;
+
+            if (direction === 'left' || direction === 'right') {
+                row = line;
+                col = direction === 'left'
+                    ? position
+                    : BOARD_SIZE - 1 - position;
+            } else {
+                row = direction === 'up'
+                    ? position
+                    : BOARD_SIZE - 1 - position;
+                col = line;
+            }
+
+            const value = previousBoard[row][col];
+
+            if (value !== 0) {
+                tiles.push({
+                    row: row,
+                    col: col,
+                    value: value
+                });
+            }
+        }
+
+        let targetPosition = 0;
+
+        for (let i = 0; i < tiles.length; i++) {
+            const sourceTile = tiles[i];
+
+            let targetRow;
+            let targetCol;
+
+            if (direction === 'left' || direction === 'right') {
+                targetRow = line;
+                targetCol = direction === 'left'
+                    ? targetPosition
+                    : BOARD_SIZE - 1 - targetPosition;
+            } else {
+                targetRow = direction === 'up'
+                    ? targetPosition
+                    : BOARD_SIZE - 1 - targetPosition;
+                targetCol = line;
+            }
+
+            const targetKey = `${targetRow}-${targetCol}`;
+            const sourceKey = `${sourceTile.row}-${sourceTile.col}`;
+
+            moveSources[targetKey] = sourceKey;
+
+            if (sourceTile.value === tiles[i + 1]?.value) {
+                i++;
+            }
+
+            targetPosition++;
+        }
+    }
+
+    return moveSources;
+}
+
 // Move tiles
 
 function moveTiles(direction) {
@@ -254,16 +466,36 @@ function moveTiles(direction) {
         return;
     }
 
+    const mergedPositions = getMergedPositions(
+        previousState.board,
+        direction
+    );
+
+    const moveSources = getMoveSources(
+        previousState.board,
+        direction
+    );
+
     undoState = previousState;
 
+    const newPositions = [];
     const newTilesCount = Math.floor(Math.random() * 2) + 1;
 
     for (let i = 0; i < newTilesCount; i++) {
-        spawnTile();
+        const newTile = spawnTile();
+
+        if (newTile) {
+            newPositions.push(`${newTile.row}-${newTile.col}`);
+        }
     }
 
     updateScore();
-    renderBoard();
+
+    renderBoard({
+        moveSources: moveSources,
+        mergedPositions: mergedPositions,
+        newPositions: newPositions
+    });
 
     if (!canMove()) {
         endGame();
@@ -437,7 +669,9 @@ function renderLeaderboard() {
         .sort((a, b) => b.score - a.score)
         .slice(0, 10);
 
-    leaderboardBody.innerHTML = '';
+    while (leaderboardBody.firstChild) {
+        leaderboardBody.removeChild(leaderboardBody.firstChild);
+    }
 
     if (records.length === 0) {
         const row = document.createElement('tr');

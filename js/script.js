@@ -2,6 +2,9 @@
 
 const BOARD_SIZE = 4;
 const STORAGE_KEY = '2048-game-state';
+const LEADERBOARD_STORAGE_KEY = '2048-leaderboard';
+const BEST_SCORE_STORAGE_KEY = '2048-best-score';
+
 let board = [];
 let score = 0;
 let isGameOver = false;
@@ -19,6 +22,14 @@ const mobileControls = document.getElementById('mobile-controls');
 const gameOverElement = document.getElementById('game-over');
 const finalScoreElement = document.getElementById('final-score');
 
+const gameOverMessageElement = document.getElementById('game-over-message');
+const recordForm = document.getElementById('record-form');
+const playerNameInput = document.getElementById('player-name');
+
+const leaderboardElement = document.getElementById('leaderboard');
+const leaderboardBody = document.getElementById('leaderboard-body');
+const leaderboardButton = document.getElementById('leaderboard-button');
+const closeLeaderboardButton = document.getElementById('close-leaderboard-button');
 
 function createBoard() {
     board = [];
@@ -78,6 +89,19 @@ function spawnTile() {
 
 function updateScore() {
     scoreElement.textContent = score;
+
+    let bestScore = Number(localStorage.getItem(BEST_SCORE_STORAGE_KEY)) || 0;
+
+    if (score > bestScore) {
+        bestScore = score;
+
+        localStorage.setItem(
+            BEST_SCORE_STORAGE_KEY,
+            bestScore
+        );
+    }
+
+    bestScoreElement.textContent = bestScore;
 }
 
 // Update undo button
@@ -273,6 +297,10 @@ function startGame() {
     isGameOver = false;
     undoState = null;
 
+    recordForm.hidden = false;
+    gameOverMessageElement.textContent = 'Игра окончена!';
+    playerNameInput.value = '';
+
     gameOverElement.hidden = true;
     mobileControls.hidden = false;
 
@@ -377,6 +405,124 @@ function loadGame() {
     }
 }
 
+// Load leaderboard from localStorage
+function loadLeaderboard() {
+    const savedLeaderboard = localStorage.getItem(LEADERBOARD_STORAGE_KEY);
+
+    if (!savedLeaderboard) {
+        return [];
+    }
+
+    try {
+        const records = JSON.parse(savedLeaderboard);
+
+        if (!Array.isArray(records)) {
+            return [];
+        }
+
+        return records.filter(record =>
+            record &&
+            typeof record.name === 'string' &&
+            Number.isFinite(record.score) &&
+            typeof record.date === 'string'
+        );
+    } catch (error) {
+        return [];
+    }
+}
+
+// Render leaderboard
+function renderLeaderboard() {
+    const records = loadLeaderboard()
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 10);
+
+    leaderboardBody.innerHTML = '';
+
+    if (records.length === 0) {
+        const row = document.createElement('tr');
+        const cell = document.createElement('td');
+
+        cell.colSpan = 4;
+        cell.textContent = 'Пока нет рекордов';
+
+        row.appendChild(cell);
+        leaderboardBody.appendChild(row);
+
+        return;
+    }
+
+    records.forEach((record, index) => {
+        const row = document.createElement('tr');
+
+        const placeCell = document.createElement('td');
+        const nameCell = document.createElement('td');
+        const scoreCell = document.createElement('td');
+        const dateCell = document.createElement('td');
+
+        placeCell.textContent = index + 1;
+        nameCell.textContent = record.name;
+        scoreCell.textContent = record.score;
+        dateCell.textContent = new Date(record.date).toLocaleDateString('ru-RU');
+
+        row.appendChild(placeCell);
+        row.appendChild(nameCell);
+        row.appendChild(scoreCell);
+        row.appendChild(dateCell);
+
+        leaderboardBody.appendChild(row);
+    });
+}
+
+// Save record
+function saveRecord(event) {
+    event.preventDefault();
+
+    const name = playerNameInput.value.trim();
+
+    if (!name) {
+        return;
+    }
+
+    const records = loadLeaderboard();
+
+    records.push({
+        name: name,
+        score: score,
+        date: new Date().toISOString()
+    });
+
+    records.sort((a, b) => b.score - a.score);
+
+    const topRecords = records.slice(0, 10);
+
+    localStorage.setItem(
+        LEADERBOARD_STORAGE_KEY,
+        JSON.stringify(topRecords)
+    );
+
+    renderLeaderboard();
+
+    recordForm.hidden = true;
+    gameOverMessageElement.textContent = 'Ваш рекорд сохранен';
+}
+
+// Open and close leaderboard
+function openLeaderboard() {
+    renderLeaderboard();
+
+    leaderboardElement.hidden = false;
+    mobileControls.hidden = true;
+}
+
+function closeLeaderboard() {
+    leaderboardElement.hidden = true;
+
+    if (!isGameOver) {
+        mobileControls.hidden = false;
+    }
+}
+
 // Keyboard controls
 
 document.addEventListener('keydown', (event) => {
@@ -423,7 +569,13 @@ newGameButton.addEventListener('click', startGame);
 document.getElementById('restart-button')
     .addEventListener('click', startGame);
 
+leaderboardButton.addEventListener('click', openLeaderboard);
+closeLeaderboardButton.addEventListener('click', closeLeaderboard);
+recordForm.addEventListener('submit', saveRecord);
+
 // Initialize game
 if (!loadGame()) {
     startGame();
 }
+
+renderLeaderboard();

@@ -209,25 +209,25 @@ button {
 }
 
 .tile-256 {
-    background-color: #edcc61;
+    background-color: #e9a66f;
     color: #ffffff;
     font-size: 30px;
 }
 
 .tile-512 {
-    background-color: #edc850;
+    background-color: #e88978;
     color: #ffffff;
     font-size: 30px;
 }
 
 .tile-1024 {
-    background-color: #edc53f;
+    background-color: #d97869;
     color: #ffffff;
     font-size: 24px;
 }
 
 .tile-2048 {
-    background-color: #edc22e;
+    background-color: #c96b78;
     color: #ffffff;
     font-size: 24px;
 }

@@ -16,7 +16,7 @@
 - кнопка просмотра таблицы рекордов;
 - окно окончания игры с возможностью сохранить результат.
 
-<img width="886" height="914" alt="image" src="https://github.com/user-attachments/assets/ac3a4d8b-e1c5-4c47-b9d9-bcddde9d472a" />
+<img width="60%" alt="image" src="https://github.com/user-attachments/assets/ac3a4d8b-e1c5-4c47-b9d9-bcddde9d472a" />
 
 В начале игры на поле случайным образом появляются от одной до трёх плиток со значениями 2 или 4.
 
